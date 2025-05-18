@@ -1,6 +1,7 @@
 from textnode import TextType
 from textnode import TextNode
 from htmlnode import LeafNode
+import re
 
 def text_node_to_html_node(text_node):
     match text_node.text_type.value:
@@ -19,9 +20,35 @@ def text_node_to_html_node(text_node):
         case _:
             raise Exception("UNKNOWN TEXTTYPE")
 
-def split_nodes_delimiter(old_nodes, delimiter, text_type):
-    
+def split_nodes_delimiter(old_nodes, delimiter):
+    new_nodes = []
+    match delimiter:
+        case "**":
+            new_text_type = TextType.BOLD
+        case "_":
+            new_text_type = TextType.ITALIC
+        case "`":
+            new_text_type = TextType.CODE
+        case _:
+            raise Exception("UNKNOWN DELIMITER")
     for node in old_nodes:
+        if node.text_type.value != "TEXT":
+            new_nodes.append(node)
+        else:
+            list_of_inlines = node.text.split(delimiter)
+            for i in range(len(list_of_inlines)):
+                if i % 2 == 0:
+                    new_nodes.append(TextNode(list_of_inlines[i], TextType.TEXT))
+                else:
+                    new_nodes.append(TextNode(list_of_inlines[i], new_text_type))
+    return new_nodes    
+
+def extract_markdown_images(text):
+    return re.findall(r"!\[([^\[\]]*)\]\(([^\(\)]*)\)", text)
+
+def extract_markdown_links(text):
+    return re.findall(r"(?<!!)\[([^\[\]]*)\]\(([^\(\)]*)\)", text)
+
 
 def main():
     img_1 = TextNode("image text", TextType.IMG, "content/images/1.png")
