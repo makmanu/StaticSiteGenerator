@@ -49,6 +49,39 @@ def extract_markdown_images(text):
 def extract_markdown_links(text):
     return re.findall(r"(?<!!)\[([^\[\]]*)\]\(([^\(\)]*)\)", text)
 
+def split_nodes_image(old_nodes):
+    new_nodes = []
+    for node in old_nodes:
+        markdowns = extract_markdown_images(node.text)
+        sections = [node.text]
+        current_node_list = []
+        for markdown in markdowns:
+            new_sectinos = (sections[-1].split(f"![{markdown[0]}]({markdown[1]})"))
+            del sections[-1]
+            sections.extend(new_sectinos)
+        for i in range(len(sections)):
+            current_node_list.append(TextNode(sections[i],TextType.TEXT))
+            if i != len(sections) - 1:
+                current_node_list.append(TextNode(markdowns[i][0], TextType.IMG, markdowns[i][1]))
+    new_nodes.extend(current_node_list)
+    return new_nodes
+        
+def split_nodes_link(old_nodes):
+    new_nodes = []
+    for node in old_nodes:
+        markdowns = extract_markdown_links(node.text)
+        sections = [node.text]
+        current_node_list = []
+        for markdown in markdowns:
+            new_sectinos = (sections[-1].split(f"[{markdown[0]}]({markdown[1]})"))
+            del sections[-1]
+            sections.extend(new_sectinos)
+        for i in range(len(sections)):
+            current_node_list.append(TextNode(sections[i],TextType.TEXT))
+            if i != len(sections) - 1:
+                current_node_list.append(TextNode(markdowns[i][0], TextType.LINK, markdowns[i][1]))
+    new_nodes.extend(current_node_list)
+    return new_nodes
 
 def main():
     img_1 = TextNode("image text", TextType.IMG, "content/images/1.png")
