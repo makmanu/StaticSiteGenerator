@@ -103,6 +103,17 @@ def text_to_textnodes(text):
         del new_nodes[-1]
     return new_nodes
 
+def markdown_to_blocks(md):
+    list_of_blocks = md.split("\n\n")
+    striped = []
+    result = []
+    for block in list_of_blocks:
+        striped.append(block.strip(" "))
+    for i in range(len(striped)):
+        if len(striped[i]) != 0:
+            result.append(striped[i].strip("\n"))
+    return result
+        
 
 def main():
     pass
