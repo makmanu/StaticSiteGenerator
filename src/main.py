@@ -1,7 +1,10 @@
 from textnode import TextType
 from textnode import TextNode
 from htmlnode import LeafNode
+from htmlnode import ParentNode
 import re
+from block import block_to_block_type
+from block import BlockType
 
 def text_node_to_html_node(text_node):
     match text_node.text_type.value:
@@ -88,9 +91,6 @@ def split_nodes_link(old_nodes):
             new_nodes.append(node)
     new_nodes.extend(current_node_list)
     return new_nodes
-
-def text_to_textnodes(text):
-    node_prime = TextNode(text, TextType.TEXT)
     
 def text_to_textnodes(text):
     original_node = [TextNode(text, TextType.TEXT),]
@@ -114,8 +114,65 @@ def markdown_to_blocks(md):
             result.append(striped[i].strip("\n"))
     return result
         
+def text_to_children(text):
+    children = []
+    text_nodes = text_to_textnodes(text)
+    for text_node in text_nodes:
+        children.append(text_node_to_html_node(text_node))
+    return children
+
+
+def block_to_htmlnode(block_type, block):
+    match block_type:
+        case BlockType.PAR:
+            return ParentNode("p", text_to_children(block.replace("\n", " ")))
+        case BlockType.HEAD:
+            count = 0
+            while block[0] == "#":
+                count += 1
+                block = block[1:]
+            block = block[1:]
+            return ParentNode(f"h{count}", text_to_children(block.replace("\n", " ")))
+        case BlockType.QUOTE:
+            quote_list = block.split("\n")
+            for i in range(len(quote_list)):
+                quote_list[i] = quote_list[i][1:]
+            quote = "\n".join(quote_list)
+            return ParentNode("blockquote", text_to_children(quote.replace("\n", " ")))
+        case BlockType.CODE:
+            code = block.strip("`").lstrip("\n")
+            return ParentNode("pre", [LeafNode("code", code),])
+        case BlockType.UNLIST:
+            list_of_items = block.split("\n")
+            for i in range(len(list_of_items)):
+                list_of_items[i] = "<li>" + list_of_items[i][2:] + "<li>"
+            unlist = "\n".join(list_of_items)
+            return ParentNode("ul", text_to_children(unlist.replace("\n", " ")))
+        case BlockType.OLIST:
+            list_of_items = block.split("\n")
+            for i in range(len(list_of_items)):
+                list_of_items[i] = "<li>" + list_of_items[i][3:] + "<li>"
+            olist = "\n".join(list_of_items)
+            return ParentNode("ol", text_to_children(olist.replace("\n", " ")))
+
+def markdown_to_html_node(markdown):
+    blocks = markdown_to_blocks(markdown)
+    html_nodes = []
+    for block in blocks:
+        block_type = block_to_block_type(block)
+        html_nodes.append(block_to_htmlnode(block_type, block))
+    return ParentNode("div", html_nodes)
+
 
 def main():
-    pass
+    md = """
+This is **bolded** paragraph
+text in a p
+tag here
+
+This is another paragraph with _italic_ text and `code` here
+
+"""
+    print(markdown_to_html_node(md).to_html())
 
 main()
