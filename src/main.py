@@ -5,6 +5,8 @@ from htmlnode import ParentNode
 import re
 from block import block_to_block_type
 from block import BlockType
+import os
+import shutil
 
 def text_node_to_html_node(text_node):
     match text_node.text_type.value:
@@ -163,16 +165,24 @@ def markdown_to_html_node(markdown):
         html_nodes.append(block_to_htmlnode(block_type, block))
     return ParentNode("div", html_nodes)
 
+def copy_from(source, dest, current_dir = ""):
+    print(os.path.join(source, current_dir))
+    print(os.path.join(dest, current_dir))
+    if current_dir == "":
+        if os.path.exists(dest):
+            shutil.rmtree(os.path.join(dest, current_dir))
+        os.mkdir(dest)
+    content = os.listdir(os.path.join(source, current_dir))
+    for thing in content:
+        if os.path.isdir(os.path.join(source, current_dir, thing)):
+            os.mkdir(os.path.join(dest, current_dir, thing))
+            copy_from(source, dest, os.path.join(current_dir, thing))
+        else:
+            shutil.copy(os.path.join(source, current_dir, thing), os.path.join(dest, current_dir))
+    return
 
 def main():
-    md = """
-This is **bolded** paragraph
-text in a p
-tag here
-
-This is another paragraph with _italic_ text and `code` here
-
-"""
-    print(markdown_to_html_node(md).to_html())
+    copy_from("static", "public")
+    print(os.listdir("."))
 
 main()
