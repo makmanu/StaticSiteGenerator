@@ -140,20 +140,20 @@ def block_to_htmlnode(block_type, block):
             for i in range(len(quote_list)):
                 quote_list[i] = quote_list[i][1:]
             quote = "\n".join(quote_list)
-            return ParentNode("blockquote", text_to_children(quote.replace("\n", " ")))
+            return ParentNode("blockquote", text_to_children(quote.replace("\n", " ").lstrip(" ")))
         case BlockType.CODE:
             code = block.strip("`").lstrip("\n")
             return ParentNode("pre", [LeafNode("code", code),])
         case BlockType.UNLIST:
             list_of_items = block.split("\n")
             for i in range(len(list_of_items)):
-                list_of_items[i] = "<li>" + list_of_items[i][2:] + "<li>"
+                list_of_items[i] = "<li>" + list_of_items[i][2:] + "</li>"
             unlist = "\n".join(list_of_items)
             return ParentNode("ul", text_to_children(unlist.replace("\n", " ")))
         case BlockType.OLIST:
             list_of_items = block.split("\n")
             for i in range(len(list_of_items)):
-                list_of_items[i] = "<li>" + list_of_items[i][3:] + "<li>"
+                list_of_items[i] = "<li>" + list_of_items[i][3:] + "</li>"
             olist = "\n".join(list_of_items)
             return ParentNode("ol", text_to_children(olist.replace("\n", " ")))
 
@@ -181,8 +181,33 @@ def copy_from(source, dest, current_dir = ""):
             shutil.copy(os.path.join(source, current_dir, thing), os.path.join(dest, current_dir))
     return
 
+def extract_title(markdown):
+    count = 0
+    while markdown[0] == "#":
+        count += 1
+        markdown = markdown[1:]
+    markdown = markdown[1:]
+    if count != 1:
+        raise Exception("NO HEADER")
+    return markdown
+
+def generate_page(from_path, template_path, dest_path):
+    print(f"Generating page from {from_path} to {dest_path} using {template_path}")
+    markdown = open(from_path).read()
+    template = open(template_path).read()
+    HTML_string = markdown_to_html_node(markdown).to_html()
+    title = extract_title(markdown)
+    print(template)
+    print(title)
+    print(HTML_string)
+    template = template.replace("{{ Title }}", title)
+    template = template.replace("{{ Content }}", HTML_string)
+    print(template)
+    os.makedirs(dest_path.rstrip("index.html"), exist_ok=True)
+    open(dest_path, mode="w").write(template)
+
 def main():
     copy_from("static", "public")
-    print(os.listdir("."))
+    generate_page("content/index.md", "template.html", "public/index.html")
 
 main()
