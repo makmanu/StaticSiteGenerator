@@ -197,17 +197,32 @@ def generate_page(from_path, template_path, dest_path):
     template = open(template_path).read()
     HTML_string = markdown_to_html_node(markdown).to_html()
     title = extract_title(markdown)
-    print(template)
-    print(title)
-    print(HTML_string)
     template = template.replace("{{ Title }}", title)
     template = template.replace("{{ Content }}", HTML_string)
     print(template)
     os.makedirs(dest_path.rstrip("index.html"), exist_ok=True)
     open(dest_path, mode="w").write(template)
 
+def find_all_indexes(dir_path_content, current_path="", list_of_indexes=[]):
+    list_of_indexes = list_of_indexes.copy()
+    dir_content = os.listdir(os.path.join(dir_path_content, current_path))
+    for thing in dir_content:
+        if os.path.isdir(os.path.join(dir_path_content, current_path, thing)):
+            list_of_indexes.extend(find_all_indexes(dir_path_content, os.path.join(current_path, thing)))
+        elif thing == "index.md":
+            list_of_indexes.append(os.path.join(dir_path_content, current_path, thing))
+    return list_of_indexes
+
+def generate_pages_recursive(dir_path_content, template_path, dest_dir_path):
+    list_of_indexes = find_all_indexes(dir_path_content)
+    for index in list_of_indexes:
+        index_dest = (dest_dir_path + index.lstrip("content")).rstrip(".md") + ".html"
+        generate_page(index, template_path, index_dest)
+
 def main():
     copy_from("static", "public")
-    generate_page("content/index.md", "template.html", "public/index.html")
+    print(find_all_indexes("content"))
+    generate_pages_recursive("content", "template.html", "public")
+    #generate_page("content/index.md", "template.html", "public/index.html")
 
 main()
