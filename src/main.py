@@ -227,8 +227,8 @@ def main():
         basepath = sys.argv[1]
     else:
         basepath = "/"
-    copy_from("static", "public")
-    generate_pages_recursive("content", "template.html", "public", basepath)
-    #generate_page("content/index.md", "template.html", "public/index.html")
+    copy_from("static", "docs")
+    generate_pages_recursive("content", "template.html", "docs", basepath)
 
+    
 main()
